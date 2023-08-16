@@ -1,0 +1,20 @@
+﻿using AssessmentAPI_Xunit.model;
+
+namespace AssessmentAPI_Xunit.Service.Interface
+{
+    public interface IBrandInteface
+    {
+        public Task<Brand> AddBrand(Brand brand);
+
+        public bool DeleteBrand(int id);
+        public bool IsExists(int id);
+
+        public ICollection<Brand> GetAllBrandsOfAVehicleType(int id);
+
+        public ICollection<Brand> GetAllBrands();
+
+        public  Task<Brand> UpdateBrand(int id, Brand brand);
+        public Brand GetBrandById(int id);
+
+    }
+}
