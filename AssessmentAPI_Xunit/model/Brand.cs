@@ -15,6 +15,6 @@ namespace AssessmentAPI_Xunit.model
         public bool? IsActive { get; set; }
 
         [JsonIgnore]
-        public virtual VehicleType? VehicleType { get; set; }
+        public virtual VehicleType? VehicleType { get; }
     }
 }

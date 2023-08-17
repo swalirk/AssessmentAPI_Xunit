@@ -19,14 +19,27 @@ namespace AssessmentAPI_Xunit.Service
             return vehicleIsAdded > 0 ? vehicle : null;
         }
 
-        public async Task<bool> UpdateVehicleType(int id, VehicleType vehicletype)
+        public async Task<bool> UpdateVehicleType(int id, VehicleType vehicletype, VehicleType existingtype)
         {
             if (id != vehicletype.VehicleTypeId)
             {
                 return false;
             }
+            if (!string.IsNullOrWhiteSpace(vehicletype.TypeName))
+            {
+                existingtype.TypeName = vehicletype.TypeName;
+            }
 
-            dbContext.Entry(vehicletype).State = EntityState.Modified;
+            if (!string.IsNullOrWhiteSpace(vehicletype.Description))
+            {
+                existingtype.Description = vehicletype.Description;
+            }
+
+            if (vehicletype.IsActive.HasValue)
+            {
+                existingtype.IsActive = vehicletype.IsActive;
+            }
+            
             await dbContext.SaveChangesAsync();
             return true;
         }

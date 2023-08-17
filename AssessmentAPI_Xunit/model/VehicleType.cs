@@ -15,6 +15,7 @@ namespace AssessmentAPI_Xunit.model
         public string? Description { get; set; }
         public bool? IsActive { get; set; }
 
-        public virtual ICollection<Brand> Brands { get; }
+        [JsonIgnore]
+        public virtual ICollection<Brand>? Brands { get; }
     }
 }

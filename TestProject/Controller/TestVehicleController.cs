@@ -135,50 +135,35 @@ namespace TestProject.Controller
             Assert.Equal(404, result.StatusCode);
         }
 
-        //[Fact]
-        //public async Task UpdateVehicleType_ValidInput_ReturnsOk()
-        //{
-        //    // Arrange
-        //    var id = fixture.Create<int>();
-        //    var vehicleTypeDTO = fixture.Create<VehicleTypeDTO>();
-        //    vehicleTypeDTO.VehicleTypeId = id;
+        
 
-        //    vehicleInterface.Setup(vi => vi.IsExists(id)).Returns(true);
-        //    vehicleInterface.Setup(vi => vi.GetVehicleTypeById(id)).Returns(vehicleTypeDTO);
-
-        //    // Act
-        //    var result = await vehicleController.UpdateVehicleType(id, vehicleTypeDTO) as OkObjectResult;
-
-        //    // Assert
-        //    result.Should().NotBeNull().And.BeOfType<OkObjectResult>();
-        //    result.StatusCode.Should().Be(200);
-        //    result.Value.Should().BeEquivalentTo(vehicleTypeDTO);
-        //}
         [Fact]
-        public async Task EditVehicletype_ValidData_ReturnsOK()
+        public async Task UpdateVehicleType_ShouldReturnOk_WhenUpdateIsSuccessful()
         {
             // Arrange
-            
-            
-            var id = 1;
-            var updatedVehicletype = new VehicleType
-            {
-                VehicleTypeId = id,
-                TypeName="CAR",
-                Description="SSJSJS",
-                IsActive=false,
-            };
-            vehicleInterface.Setup(service => service.UpdateVehicleType(id, updatedVehicletype)).ReturnsAsync(true);
+            int id = 1;
+            var updateVehicleType = new VehicleType { VehicleTypeId = id, TypeName = "Updated Type" };
+            var existingType = new VehicleType { VehicleTypeId = id, TypeName = "Existing Type" };
+
+           
+            vehicleInterface.Setup(v => v.GetVehicleTypeById(id)).Returns(existingType);
+            vehicleInterface.Setup(v => v.UpdateVehicleType(id, updateVehicleType, existingType)).ReturnsAsync(true);
+
+           
 
             // Act
-            var result = await vehicleController.UpdateVehicleType(id, updatedVehicletype);
+            var result = await vehicleController.UpdateVehicleType(id, updateVehicleType,existingType);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.IsType<OkObjectResult>(result);
+            var okResult = result as OkObjectResult;
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
             Assert.Equal("Success", okResult.Value);
         }
+
+       
         [Fact]
-        public async Task EditVehicletype_InvalidData_ReturnsBadRequest()
+        public async Task UpdateVehicletype_InvalidData_ReturnsBadRequest()
         {
             // Arrange
   
@@ -190,35 +175,39 @@ namespace TestProject.Controller
                 Description = "SSJSJS",
                 IsActive = true
             };
-            vehicleInterface.Setup(service => service.UpdateVehicleType(id, updatedVehicletype)).ReturnsAsync(false);
+            var existingtype = new VehicleType { VehicleTypeId = id, TypeName = "Updated Type" };
+            vehicleInterface.Setup(service => service.UpdateVehicleType(id, updatedVehicletype,existingtype)).ReturnsAsync(false);
 
             // Act
-            var result = await vehicleController.UpdateVehicleType(id, updatedVehicletype);
+            var result = await vehicleController.UpdateVehicleType(id, updatedVehicletype,existingtype);
 
             // Assert
             Assert.IsType<BadRequestResult>(result);
         }
-
         [Fact]
-        public async Task UpdateVehicleType_Exception_ReturnsBadRequestWithErrorMessage()
+        public async Task UpdateVehicleType_ShouldReturnBadRequestObjectResult_WhenAnExceptionOccurred()
         {
             // Arrange
+            int id = 1;
+            var updateVehicleType = new VehicleType { VehicleTypeId = id, TypeName = "Updated Type" };
+            var existingType = new VehicleType { VehicleTypeId = id, TypeName = "Existing Type" };
+
             
-            var id = 1;
-            var updatedVehicletype = new VehicleType 
-            {
-               
-            };
-            var errorMessage = "Some error message";
-            vehicleInterface.Setup(service => service.UpdateVehicleType(id, updatedVehicletype)).ThrowsAsync(new Exception(errorMessage));
+            vehicleInterface.Setup(v => v.GetVehicleTypeById(id)).Returns(existingType);
+            vehicleInterface.Setup(v => v.UpdateVehicleType(id, updateVehicleType, existingType)).ThrowsAsync(new Exception("Something went wrong"));
+
+            
 
             // Act
-            var result = await vehicleController.UpdateVehicleType(id, updatedVehicletype);
+            var result = await vehicleController.UpdateVehicleType(id, updateVehicleType,existingType);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(errorMessage, badRequestResult.Value);
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal("Something went wrong", badRequestResult.Value);
         }
+      
 
     }
 }

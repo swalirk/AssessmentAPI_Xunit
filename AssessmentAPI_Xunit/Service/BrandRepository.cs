@@ -2,6 +2,7 @@
 using AssessmentAPI_Xunit.Service.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AssessmentAPI_Xunit.Service
 {
@@ -39,17 +40,46 @@ namespace AssessmentAPI_Xunit.Service
             return dbContext.Brands.ToList();
         }
 
-        public async Task<Brand> UpdateBrand(int id, Brand brand)
+        public async Task<bool> UpdateBrand(int id, Brand brand,Brand existingBrand)
         {
-            dbContext.Brands.Entry(brand).State = EntityState.Modified;
+            if(id!=brand.BrandId)
+            {
+                return false;
+            }
+            
+            if (!string.IsNullOrWhiteSpace(brand.BrandName))
+            {
+                existingBrand.BrandName = brand.BrandName;
+            }
+
+            if (brand.VehicleTypeId != 0)
+            {
+                existingBrand.VehicleTypeId = brand.VehicleTypeId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(brand.Description))
+            {
+                existingBrand.Description = brand.Description;
+            }
+
+            if (brand.SortOrder.HasValue)
+            {
+                existingBrand.SortOrder = brand.SortOrder;
+            }
+
+            if (brand.IsActive.HasValue)
+            {
+                existingBrand.IsActive = brand.IsActive;
+            }
             await dbContext.SaveChangesAsync();
-            return brand;
+            return true;
+         
         }
 
 
         public Brand GetBrandById(int id)
         {
-            return dbContext.Brands.FirstOrDefault(b => b.BrandId == id);
+            return dbContext.Brands.Find(id);
         }
 
         public bool IsExists(int id)

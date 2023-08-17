@@ -32,10 +32,7 @@ namespace AssessmentAPI_Xunit.Controllers
                     return BadRequest();
 
                 }
-                //if (!ModelState.IsValid)
-                //{
-                //    return BadRequest();
-                //}
+                
                 else
                 {
                     vehicletype.VehicleTypeId = new int();
@@ -50,39 +47,16 @@ namespace AssessmentAPI_Xunit.Controllers
 
         }
 
-        //[HttpPut]
-        //[Route("[controller]/UpdateVehicleType/{id}")]
-        //public async Task<ActionResult<VehicleTypeDTO>> UpdateVehicleType([FromRoute] int id, [FromBody] VehicleTypeDTO vehicleTypeDTO)
-        //{
-        //    try
-        //    {
-        //        if (id != vehicleTypeDTO.VehicleTypeId)
-        //        {
-        //            return BadRequest("Id not match with update id");
-        //        }
-        //        if (vehicleinterface.IsExists(id))
-        //        {
-        //            var vehicleType = vehicleinterface.GetVehicleTypeById(id);
-        //            await vehicleinterface.UpdateVehicleType(id, vehicleType);
-        //            return Ok(vehicleTypeDTO);
-        //        }
-        //        return BadRequest("Id not found");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-
-        //}
+        
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateVehicleType(int id, VehicleType vehicletype)
+        public async Task<IActionResult> UpdateVehicleType(int id, VehicleType vehicletype ,VehicleType existing)
         {
             try
             {
 
-
-                var success = await vehicleinterface.UpdateVehicleType(id, vehicletype);
+                var existingtype=vehicleinterface.GetVehicleTypeById(id);
+                var success = await vehicleinterface.UpdateVehicleType(id, vehicletype,existingtype);
                 if (success == false)
                 {
                     return BadRequest();
@@ -95,10 +69,6 @@ namespace AssessmentAPI_Xunit.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-
-
-
 
 
 

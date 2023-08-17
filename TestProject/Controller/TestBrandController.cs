@@ -5,6 +5,7 @@ using AutoFixture;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using Org.BouncyCastle.Crypto;
 using System.Collections.Generic;
@@ -73,6 +74,57 @@ namespace TestProject.Controller
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Some error message", badRequestResult.Value);
         }
+
+        [Fact]
+        public void GetAllBrands_Return_Brands()
+        {
+            // Arrange
+            brandInterface.Setup(c => c.GetAllBrands()).Returns(new List<Brand> { new Brand(), new Brand() });
+
+            // Act
+            var result = brandController.GetAllBrands();
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            var okResult = result as OkObjectResult;
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+
+            var brands = okResult.Value as List<Brand>;
+            Assert.NotNull(brands);
+            Assert.NotEmpty(brands);
+        }
+
+        [Fact]
+        public void GetAllBrands_Return_BadRequest_WhenDatanotFound()
+        {
+            brandInterface.Setup(c => c.GetAllBrands()).Returns(new List<Brand>());
+
+            // Act
+            var result = brandController.GetAllBrands();
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal("Data Not Found", badRequestResult.Value);
+        }
+        public void GetAllBrands_Exception_ReturnsBadRequestWithExceptionMessage()
+        {
+
+
+            // Arrange
+            brandInterface.Setup(c => c.GetAllBrands()).Throws(new Exception("Something went wrong"));
+
+            // Act
+            var result = brandController.GetAllBrands();
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal("Something went wrong", badRequestResult.Value);
+        }
+
         [Fact]
         public void GetAllBrandsOfAVehicleType_ValidId_ReturnsOkResultWithBrands()
         {
@@ -172,60 +224,105 @@ namespace TestProject.Controller
             Assert.Equal(exceptionMessage, badRequestResult.Value);
         }
 
+       
+
+        
+       
+
         [Fact]
-        public void  UpdateBrand_ValidData_ReturnsOkResult()
+        public async Task UpdateBrand_ShouldReturnOk_WhenUpdateIsSuccessful()
         {
-            int id=fixture.Create<int>();
-            var brand = fixture.Create<Brand>();
-            brand.BrandId = id;
-            var returnData = fixture.Create<Brand>();
-            brandInterface.Setup(c => c.IsExists(brand.VehicleTypeId)).Returns(true);
-            brandInterface.Setup(c => c.UpdateBrand(id, brand)).ReturnsAsync(returnData);
+            // Arrange
+            int id = 1;
+            var updateBrand = new Brand { BrandId = id, BrandName = "Updated Brand" };
+            var existingBrand = new Brand { BrandId = id, BrandName = "Existing Brand" };
+
           
-            //Act
-            var result = brandController.UpdateBrand(id, brand);
+            brandInterface.Setup(b => b.GetBrandById(id)).Returns(existingBrand);
+           brandInterface.Setup(b => b.UpdateBrand(id, updateBrand, existingBrand)).ReturnsAsync(true);
 
-            //Assert
-            result.Should().NotBeNull();
-           result.Should().BeAssignableTo<Task<IActionResult>>();
-            result.Result.Should().BeAssignableTo<OkObjectResult>();
-        }
-
-        [Fact]
-        public void  UpdateBrand_IdMismatch_ReturnsBadRequest()
-        {
-            int id = 1;
            
-            var brand = fixture.Create<Brand>();
-            brandInterface.Setup(c => c.UpdateBrand(id, brand)).Returns(Task.FromResult<Brand>(null));
 
-            //Act
-            var result = brandController.UpdateBrand(id, brand);
+            // Act
+            var result = await brandController.UpdateBrand(id, updateBrand,existingBrand);
 
-            //Assert
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            var okResult = result as OkObjectResult;
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            Assert.Equal("Success", okResult.Value);
+        }
+
+        [Fact]
+        public void UpdateBrand_ShouldReturnBadRequestResult_WhenUpdateFails()
+        {
+            // Arrange
+            int id = 2;
+            var brandup = fixture.Create<Brand>();
+            var updateBrand = new Brand { BrandId = id, BrandName = "Updated Brand" };
+            var existingBrand = new Brand { BrandId = id, BrandName = "Existing Brand" };
+            brandInterface.Setup(c => c.UpdateBrand(id, updateBrand, existingBrand)).ReturnsAsync(false); 
+
+            // Act
+            var result =  brandController.UpdateBrand(id,updateBrand, existingBrand);
+
+            // Assert
             result.Should().NotBeNull();
             result.Should().BeAssignableTo<Task<IActionResult>>();
-            result.Should().BeAssignableTo<BadRequestResult>();
-            
+            result.Result.Should().BeAssignableTo<BadRequestResult>();
+        }
 
+        [Fact]
+        public async Task UpdateBrand_ShouldReturnBadRequestObjectResult_WhenAnExceptionOccurred()
+        {
+            // Arrange
+            int id = 1;
+            var updateBrand = new Brand { BrandId = id, BrandName = "Updated Brand" };
+            var existingBrand = new Brand { BrandId = id, BrandName = "Existing Brand" };
+
+
+            brandInterface.Setup(b => b.GetBrandById(id)).Returns(existingBrand);
+            brandInterface.Setup(b => b.UpdateBrand(id, updateBrand, existingBrand)).ThrowsAsync(new Exception("Something went wrong"));
+
+
+            // Act
+            var result = await brandController.UpdateBrand(id, updateBrand, existingBrand);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal("Something went wrong", badRequestResult.Value);
         }
         [Fact]
-        public void EditColumn_ShouldReturnBadRequestObjectResult_WhenAnExceptionOccurred()
+        public async Task UpdateBrand_ShouldReturnBadRequest_WhenForeignKeyConstraintFails()
         {
-            //Arrange
+            // Arrange
             int id = 1;
-            var brandup = fixture.Create<Brand>();
-            brandInterface.Setup(c => c.UpdateBrand(id, brandup)).Throws(new Exception());
+            var updateBrand = new Brand { BrandId = id, VehicleTypeId = 999, BrandName = "Updat"  };
+            var existingBrand = new Brand { BrandId = id, BrandName = "Existing Brand" };
 
-            //Act
-            var result = brandController.UpdateBrand(id, brandup);
-
-            //Assert
-            result.Should().NotBeNull();
-            result.Should().BeAssignableTo<Task<IActionResult>>();
-            result.Result.Should().BeAssignableTo<BadRequestObjectResult>();
             
+            brandInterface.Setup(b => b.GetBrandById(id)).Returns(existingBrand);
+            brandInterface.Setup(b => b.UpdateBrand(id, updateBrand, existingBrand)).ThrowsAsync(new DbUpdateException("Could not save changes. Please configure your entity type accordingly."));
+
+            
+
+            // Act
+            var result = await brandController.UpdateBrand(id, updateBrand,existingBrand);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal("Could not save changes. Please configure your entity type accordingly.", badRequestResult.Value);
         }
+
+        
+
+
+
+
 
 
     }

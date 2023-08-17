@@ -106,43 +106,28 @@ namespace AssessmentAPI_Xunit.Controllers
 
         }
 
-
-        [HttpPut]
-        [Route("[controller]/UpdateBrand/{id}")]
-        public async Task<IActionResult> UpdateBrand([FromRoute] int id, [FromBody] Brand brand)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBrand(int id, Brand brand,Brand existingBrand)
         {
             try
             {
-                if (id != brand.BrandId)
-                {
-                    return BadRequest("Id not match with update id");
-                }
-                //if ((vehicleInterface.IsExists(brand.VehicleTypeId))==false)
-                //{
-                //    return BadRequest("Vehicle Id is not existing");
-                //}
+                existingBrand=brandinterface.GetBrandById(id);
 
-                if (brandinterface.IsExists(id))
+                var success = await brandinterface.UpdateBrand(id,brand,existingBrand);
+                if (success == false)
                 {
-                    var branddetails = brandinterface.GetBrandById(id);
-
-                    await brandinterface.UpdateBrand(id, branddetails);
-                    return Ok(brand);
-                }
-                else
-                {
-                    return BadRequest("id is not found");
+                    return BadRequest();
                 }
 
-
-
+                return Ok("Success");
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-
         }
+
+       
 
         [HttpDelete]
         [Route("[controller]/DeleteBrand/{id}")]
